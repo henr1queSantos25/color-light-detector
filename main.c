@@ -2,6 +2,11 @@
 #include "pico/stdlib.h"
 
 
+// === BIBLIOTECAS DA PASTA LIB ===
+#include "ssd1306.h"
+#include "gy_33.h"
+#include "bh1750.h"
+
 
 int main()
 {
