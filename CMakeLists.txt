@@ -11,6 +11,11 @@ include_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_executable(${PROJECT_NAME}  
         main.c
+        lib/ssd1306/ssd1306.c
+        lib/gy_33/gy_33.c
+        lib/bh1750/bh1750.c
+        lib/rgb/rgb.c
+        lib/push_button/button.c
         )
 
 
@@ -20,10 +25,15 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} 
         pico_stdlib
         hardware_i2c
+        hardware_pwm
         )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR} 
-
+            lib/ssd1306
+            lib/gy_33
+            lib/bh1750
+            lib/rgb
+            lib/push_button
         )
 
 pico_enable_stdio_usb(${PROJECT_NAME} 1)
