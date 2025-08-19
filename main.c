@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 
-
 // === BIBLIOTECAS DA PASTA LIB ===
 #include "ssd1306.h"
 #include "gy_33.h"
 #include "bh1750.h"
 #include "rgb.h"
 #include "button.h"
+#include "matriz.h"
 
 // === DEFINIÇÕES DE PINOS E ESTRUTURA DE DADOS PARA AS CORES ===
 #define I2C_PORT_SENSORS i2c0
@@ -69,8 +69,9 @@ int main() {
     uint16_t lux;
     char detected_color;
 
+    // Defina o valor máximo de lux esperado para o ambiente (ajuste conforme necessário)
+    const float LUX_MAX = 800.0f;
     while (1) {
-
         lux = bh1750_read_measurement();
         gy33_read_color(&rgb[0], &rgb[1], &rgb[2], NULL);
 
@@ -78,8 +79,15 @@ int main() {
         snprintf(str_lux, sizeof(str_lux), "Lum: %u lx", lux);
 
         detected_color = check_color(rgb);
-
         check_current_state(detected_color);
+
+        // Calcula brilho proporcional à luminosidade lida (limitado a 1.0)
+        float brilho = (float)lux / LUX_MAX;
+        if (brilho > 1.0f) brilho = 1.0f;
+        if (brilho < 0.05f) brilho = 0.05f; // brilho mínimo para enxergar
+
+        // Atualiza a matriz de LEDs com a cor lida do sensor e brilho proporcional à luz
+        matriz_atualizar_cor(rgb[0], rgb[1], rgb[2], brilho);
 
         // Atualiza o display com os valores lidos
         info_display();
@@ -115,6 +123,9 @@ void setup() {
     setupLED(LED_GREEN);
     setupLED(LED_BLUE);
     setup_button(BUTTON_A);
+
+    // === CONFIGURAÇÃO DA MATRIZ ===
+    init_matriz();
 }
 
 void setup_interruptions() {
