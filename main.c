@@ -8,6 +8,10 @@
 #include "rgb.h"
 #include "button.h"
 #include "matriz.h"
+#include "hardware/clocks.h"
+#include "hardware/timer.h"
+#include "hardware/pwm.h"
+
 
 // === DEFINIÇÕES DE PINOS E ESTRUTURA DE DADOS PARA AS CORES ===
 #define I2C_PORT_SENSORS i2c0
@@ -20,6 +24,9 @@
 #define LED_GREEN 11
 #define LED_BLUE 12
 #define BUTTON_A 5
+#define BUZZER_PIN 10
+// Configuração da frequência do buzzer (em Hz)
+#define BUZZER_FREQUENCY 100
 
 typedef struct {
     char code;
@@ -49,6 +56,7 @@ static const color_info_t colors[] = {
 // PROTÓTIPOS DAS FUNÇÕES
 // ========================================================================
 void setup();
+void pwm_init_buzzer(uint pin);
 void setup_interruptions();
 void info_display();
 void gpio_irq_handler(uint gpio, uint32_t events);
@@ -73,6 +81,15 @@ int main() {
     const float LUX_MAX = 800.0f;
     while (1) {
         lux = bh1750_read_measurement();
+
+        if (lux < 5){
+            uint slice_num = pwm_gpio_to_slice_num(BUZZER_PIN);
+            pwm_set_gpio_level(BUZZER_PIN, 2048);
+        }
+        else {
+            pwm_set_gpio_level(BUZZER_PIN, 0); 
+        }
+
         gy33_read_color(&rgb[0], &rgb[1], &rgb[2], NULL);
 
         snprintf(str_colors, sizeof(str_colors), "RGB:%u,%u,%u", rgb[0], rgb[1], rgb[2]);
@@ -100,7 +117,23 @@ int main() {
 // ========================================================================
 // FUNÇÕES DE INICIALIZAÇÃO
 // ========================================================================
+// Definição de uma função para inicializar o PWM no pino do buzzer
+void pwm_init_buzzer(uint pin)
+{
+    // Configurar o pino como saída de PWM
+    gpio_set_function(pin, GPIO_FUNC_PWM);
 
+    // Obter o slice do PWM associado ao pino
+    uint slice_num = pwm_gpio_to_slice_num(pin);
+
+    // Configurar o PWM com frequência desejada
+    pwm_config config = pwm_get_default_config();
+    pwm_config_set_clkdiv(&config, clock_get_hz(clk_sys) / (BUZZER_FREQUENCY * 4096)); // Divisor de clock
+    pwm_init(slice_num, &config, true);
+
+    // Iniciar o PWM no nível baixo
+    pwm_set_gpio_level(pin, 0);
+}
 /**
  * @brief Inicializa todos os periféricos e sensores do sistema
  */
@@ -123,6 +156,11 @@ void setup() {
     setupLED(LED_GREEN);
     setupLED(LED_BLUE);
     setup_button(BUTTON_A);
+
+    // === CONFIGURAÇÃO DOS BUZZER === 
+    gpio_init(BUZZER_PIN);
+    gpio_set_dir(BUZZER_PIN, GPIO_OUT);
+    pwm_init_buzzer(BUZZER_PIN);
 
     // === CONFIGURAÇÃO DA MATRIZ ===
     init_matriz();

@@ -42,6 +42,8 @@ target_link_libraries(${PROJECT_NAME}
         hardware_i2c
         hardware_pwm
         hardware_pio
+        hardware_clocks
+        hardware_timer
         )
 
 pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/lib/matriz/matriz.pio)
