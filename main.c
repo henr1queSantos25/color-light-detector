@@ -8,9 +8,7 @@
 #include "rgb.h"
 #include "button.h"
 #include "matriz.h"
-#include "hardware/clocks.h"
-#include "hardware/timer.h"
-#include "hardware/pwm.h"
+#include "buzzer.h"
 
 
 // === DEFINIÇÕES DE PINOS E ESTRUTURA DE DADOS PARA AS CORES ===
@@ -25,8 +23,6 @@
 #define LED_BLUE 12
 #define BUTTON_A 5
 #define BUZZER_PIN 10
-// Configuração da frequência do buzzer (em Hz)
-#define BUZZER_FREQUENCY 100
 
 typedef struct {
     char code;
@@ -56,7 +52,6 @@ static const color_info_t colors[] = {
 // PROTÓTIPOS DAS FUNÇÕES
 // ========================================================================
 void setup();
-void pwm_init_buzzer(uint pin);
 void setup_interruptions();
 void info_display();
 void gpio_irq_handler(uint gpio, uint32_t events);
@@ -77,7 +72,7 @@ int main() {
     uint16_t lux;
     char detected_color;
 
-    // Defina o valor máximo de lux esperado para o ambiente (ajuste conforme necessário)
+    // Defina o valor máximo de lux esperado para o ambiente
     const float LUX_MAX = 800.0f;
     while (1) {
         lux = bh1750_read_measurement();
@@ -117,23 +112,6 @@ int main() {
 // ========================================================================
 // FUNÇÕES DE INICIALIZAÇÃO
 // ========================================================================
-// Definição de uma função para inicializar o PWM no pino do buzzer
-void pwm_init_buzzer(uint pin)
-{
-    // Configurar o pino como saída de PWM
-    gpio_set_function(pin, GPIO_FUNC_PWM);
-
-    // Obter o slice do PWM associado ao pino
-    uint slice_num = pwm_gpio_to_slice_num(pin);
-
-    // Configurar o PWM com frequência desejada
-    pwm_config config = pwm_get_default_config();
-    pwm_config_set_clkdiv(&config, clock_get_hz(clk_sys) / (BUZZER_FREQUENCY * 4096)); // Divisor de clock
-    pwm_init(slice_num, &config, true);
-
-    // Iniciar o PWM no nível baixo
-    pwm_set_gpio_level(pin, 0);
-}
 /**
  * @brief Inicializa todos os periféricos e sensores do sistema
  */
